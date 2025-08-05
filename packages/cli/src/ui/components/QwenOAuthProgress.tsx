@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import Spinner from 'ink-spinner';
-import  qrcode from 'qrcode-terminal';
+import qrcode from 'qrcode-terminal';
 import { Colors } from '../colors.js';
 import { DeviceAuthorizationInfo } from '../hooks/useQwenAuth.js';
 
@@ -44,9 +44,13 @@ export function QwenOAuthProgress({
     // Generate QR code string
     const generateQR = () => {
       try {
-        qrcode.generate(deviceAuth.verification_uri_complete, { small: true }, (qrcode: string) => {
-          setQrCodeData(qrcode);
-        });
+        qrcode.generate(
+          deviceAuth.verification_uri_complete,
+          { small: true },
+          (qrcode: string) => {
+            setQrCodeData(qrcode);
+          },
+        );
       } catch (error) {
         console.error('Failed to generate QR code:', error);
         setQrCodeData(null);
@@ -128,7 +132,12 @@ export function QwenOAuthProgress({
         <Text>Please visit this URL to authorize:</Text>
       </Box>
 
-      <Box marginTop={1} borderStyle="single" borderColor={Colors.Gray} padding={1}>
+      <Box
+        marginTop={1}
+        borderStyle="single"
+        borderColor={Colors.Gray}
+        padding={1}
+      >
         <Text color={Colors.AccentGreen} bold>
           {deviceAuth.verification_uri_complete}
         </Text>

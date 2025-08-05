@@ -5,7 +5,7 @@
  */
 
 import { OpenAIContentGenerator } from './openaiContentGenerator.js';
-import { QwenTokenManager } from './qwenTokenManager.js';
+import { IQwenOAuth2Client } from '../code_assist/qwenOAuth2.js';
 import { Config } from '../config/config.js';
 import {
   GenerateContentParameters,
@@ -23,12 +23,16 @@ const QWEN_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
  * OpenAI Content Generator wrapper that uses Qwen OAuth tokens with automatic refresh
  */
 export class QwenOpenAIContentGenerator extends OpenAIContentGenerator {
-  private tokenManager: QwenTokenManager;
+  private qwenClient: IQwenOAuth2Client;
 
-  constructor(tokenManager: QwenTokenManager, model: string, config: Config) {
+  // Token management (integrated from QwenTokenManager)
+  private currentToken: string | null = null;
+  private refreshPromise: Promise<string> | null = null;
+
+  constructor(qwenClient: IQwenOAuth2Client, model: string, config: Config) {
     // Initialize with empty API key, we'll override it dynamically
     super('', model, config);
-    this.tokenManager = tokenManager;
+    this.qwenClient = qwenClient;
 
     // Qwen OAuth only supports calling specified models at the specified endpoint
     this.client.baseURL = QWEN_BASE_URL;
@@ -131,7 +135,7 @@ export class QwenOpenAIContentGenerator extends OpenAIContentGenerator {
         );
 
         // Refresh token and retry once
-        const newToken = await this.tokenManager.refreshToken();
+        const newToken = await this.refreshToken();
         return await operation(newToken);
       }
 
@@ -144,11 +148,77 @@ export class QwenOpenAIContentGenerator extends OpenAIContentGenerator {
    */
   private async getTokenWithRetry(): Promise<string> {
     try {
-      return await this.tokenManager.getValidToken();
+      return await this.getValidToken();
     } catch (error) {
       console.error('Failed to get valid token:', error);
       throw new Error(
         'Failed to obtain valid Qwen access token. Please re-authenticate.',
+      );
+    }
+  }
+
+  // Token management methods (integrated from QwenTokenManager)
+
+  /**
+   * Get a valid access token, refreshing if necessary
+   */
+  private async getValidToken(): Promise<string> {
+    // If there's already a refresh in progress, wait for it
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    try {
+      const { token } = await this.qwenClient.getAccessToken();
+      if (token) {
+        this.currentToken = token;
+        return token;
+      }
+    } catch (error) {
+      console.warn('Failed to get access token, attempting refresh:', error);
+    }
+
+    // Start a new refresh operation
+    this.refreshPromise = this.performTokenRefresh();
+
+    try {
+      const newToken = await this.refreshPromise;
+      return newToken;
+    } finally {
+      this.refreshPromise = null;
+    }
+  }
+
+  /**
+   * Force refresh the access token
+   */
+  private async refreshToken(): Promise<string> {
+    this.refreshPromise = this.performTokenRefresh();
+
+    try {
+      const newToken = await this.refreshPromise;
+      return newToken;
+    } finally {
+      this.refreshPromise = null;
+    }
+  }
+
+  private async performTokenRefresh(): Promise<string> {
+    try {
+      console.log('Refreshing Qwen access token...');
+      const { credentials } = await this.qwenClient.refreshAccessToken();
+
+      if (!credentials.access_token) {
+        throw new Error('Failed to refresh access token: no token returned');
+      }
+
+      this.currentToken = credentials.access_token;
+      console.log('Qwen access token refreshed successfully');
+      return credentials.access_token;
+    } catch (error) {
+      console.error('Failed to refresh Qwen access token:', error);
+      throw new Error(
+        `Token refresh failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

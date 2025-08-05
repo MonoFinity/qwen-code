@@ -201,24 +201,16 @@ export async function createContentGenerator(
     const { getQwenOAuthClient: getQwenOauthClient } = await import(
       '../code_assist/qwenOAuth2.js'
     );
-    const { QwenTokenManager } = await import('./qwenTokenManager.js');
     const { QwenOpenAIContentGenerator } = await import(
       './qwenOpenAIContentGenerator.js'
     );
 
     try {
-      // Get the Qwen OAuth client
+      // Get the Qwen OAuth client (now includes integrated token management)
       const qwenClient = await getQwenOauthClient(gcConfig);
 
-      // Create token manager
-      const tokenManager = new QwenTokenManager(qwenClient);
-
-      // Create the content generator with dynamic token management
-      return new QwenOpenAIContentGenerator(
-        tokenManager,
-        config.model,
-        gcConfig,
-      );
+      // Create the content generator with the OAuth client directly
+      return new QwenOpenAIContentGenerator(qwenClient, config.model, gcConfig);
     } catch (error) {
       console.error('Failed to create Qwen OAuth content generator:', error);
       throw new Error(

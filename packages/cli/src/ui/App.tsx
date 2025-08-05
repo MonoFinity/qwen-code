@@ -231,12 +231,8 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
     cancelAuthentication,
   } = useAuthCommand(settings, setAuthError, config);
 
-  const {
-    isQwenAuthenticating,
-    deviceAuth,
-    isQwenAuth,
-    cancelQwenAuth,
-  } = useQwenAuth(settings, isAuthenticating);
+  const { isQwenAuthenticating, deviceAuth, isQwenAuth, cancelQwenAuth } =
+    useQwenAuth(settings, isAuthenticating);
 
   useEffect(() => {
     if (settings.merged.selectedAuthType) {
@@ -871,7 +867,9 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
                 <QwenOAuthProgress
                   deviceAuth={deviceAuth || undefined}
                   onTimeout={() => {
-                    setAuthError('Qwen OAuth authentication timed out. Please try again.');
+                    setAuthError(
+                      'Qwen OAuth authentication timed out. Please try again.',
+                    );
                     cancelQwenAuth();
                     cancelAuthentication();
                     openAuthDialog();
@@ -938,7 +936,7 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
               <LoadingIndicator
                 thought={
                   streamingState === StreamingState.WaitingForConfirmation ||
-                    config.getAccessibility()?.disableLoadingPhrases
+                  config.getAccessibility()?.disableLoadingPhrases
                     ? undefined
                     : thought
                 }

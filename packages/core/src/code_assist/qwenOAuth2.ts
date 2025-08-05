@@ -307,8 +307,6 @@ export enum QwenOAuth2Event {
  */
 export const qwenOAuth2Events = new EventEmitter();
 
-
-
 export async function getQwenOAuthClient(
   config: Config,
 ): Promise<QwenOAuth2Client> {
@@ -391,7 +389,11 @@ async function authWithQwenDeviceFlow(
     }
 
     // Emit auth progress event
-    qwenOAuth2Events.emit(QwenOAuth2Event.AuthProgress, 'polling', 'Waiting for authorization...');
+    qwenOAuth2Events.emit(
+      QwenOAuth2Event.AuthProgress,
+      'polling',
+      'Waiting for authorization...',
+    );
 
     console.log('Waiting for authorization...\n');
 
@@ -448,7 +450,7 @@ async function authWithQwenDeviceFlow(
           );
 
           process.stdout.write('.');
-          
+
           await new Promise((resolve) => setTimeout(resolve, pollInterval));
           continue;
         }
@@ -459,29 +461,33 @@ async function authWithQwenDeviceFlow(
         if (errorMessage.includes('401')) {
           const message =
             'Device code expired or invalid, please restart the authorization process.';
-          
+
           // Emit error event
           qwenOAuth2Events.emit(QwenOAuth2Event.AuthProgress, 'error', message);
-          
+
           console.error('\n' + message);
           return false;
         }
-        
+
         const message = `Error polling for token: ${errorMessage}`;
-        
+
         // Emit error event
         qwenOAuth2Events.emit(QwenOAuth2Event.AuthProgress, 'error', message);
-        
+
         console.error('\n' + message);
         await new Promise((resolve) => setTimeout(resolve, pollInterval));
       }
     }
 
     const timeoutMessage = 'Authorization timeout, please restart the process.';
-    
+
     // Emit timeout error event
-    qwenOAuth2Events.emit(QwenOAuth2Event.AuthProgress, 'error', timeoutMessage);
-    
+    qwenOAuth2Events.emit(
+      QwenOAuth2Event.AuthProgress,
+      'error',
+      timeoutMessage,
+    );
+
     console.error('\n' + timeoutMessage);
     return false;
   } catch (error: unknown) {

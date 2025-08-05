@@ -6,7 +6,11 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { LoadedSettings } from '../../config/settings.js';
-import { AuthType, qwenOAuth2Events, QwenOAuth2Event } from '@qwen-code/qwen-code-core';
+import {
+  AuthType,
+  qwenOAuth2Events,
+  QwenOAuth2Event,
+} from '@qwen-code/qwen-code-core';
 
 export interface DeviceAuthorizationInfo {
   verification_uri: string;
@@ -73,7 +77,10 @@ export const useQwenAuth = (
       }));
     };
 
-    const handleAuthProgress = (status: 'success' | 'error' | 'polling', message?: string) => {
+    const handleAuthProgress = (
+      status: 'success' | 'error' | 'polling',
+      message?: string,
+    ) => {
       setQwenAuthState((prev) => ({
         ...prev,
         authStatus: status,
