@@ -14,8 +14,7 @@
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "env": {
-        "GEMINI_SANDBOX": "false",
-        "DEBUG": "0"
+        "GEMINI_SANDBOX": "false"
       }
     },
     {
