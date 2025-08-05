@@ -16,6 +16,8 @@ import {
   EmbedContentResponse,
 } from '@google/genai';
 
+const QWEN_BASE_URL = 'https://api.qwen.ai';
+
 /**
  * OpenAI Content Generator wrapper that uses Qwen OAuth tokens with automatic refresh
  */
@@ -26,6 +28,9 @@ export class QwenOpenAIContentGenerator extends OpenAIContentGenerator {
     // Initialize with empty API key, we'll override it dynamically
     super('', model, config);
     this.tokenManager = tokenManager;
+
+    // Qwen OAuth only supports calling specified models at the specified endpoint
+    this.client.baseURL = QWEN_BASE_URL;
   }
 
   /**

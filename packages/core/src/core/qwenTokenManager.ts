@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { QwenOAuth2Client } from '../code_assist/qwenOauth2.js';
+import { IQwenOAuth2Client } from '../code_assist/qwenOauth2.js';
 
 /**
  * Manages Qwen OAuth access tokens with automatic refresh capability
@@ -13,7 +13,7 @@ export class QwenTokenManager {
   private currentToken: string | null = null;
   private refreshPromise: Promise<string> | null = null;
 
-  constructor(private qwenClient: QwenOAuth2Client) {}
+  constructor(private qwenClient: IQwenOAuth2Client) {}
 
   /**
    * Get a valid access token, refreshing if necessary
