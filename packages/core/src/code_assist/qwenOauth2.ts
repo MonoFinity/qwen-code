@@ -9,6 +9,8 @@ import open from 'open';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import * as os from 'os';
+// @ts-expect-error - qrcode-terminal doesn't have perfect TypeScript support
+import qrcode from 'qrcode-terminal';
 import { Config } from '../config/config.js';
 
 // OAuth Endpoints
@@ -36,7 +38,7 @@ const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // 5 minutes
  * Generate a random code verifier for PKCE
  * @returns A random string of 43-128 characters
  */
-function generateCodeVerifier(): string {
+export function generateCodeVerifier(): string {
   return crypto.randomBytes(32).toString('base64url');
 }
 
@@ -45,7 +47,7 @@ function generateCodeVerifier(): string {
  * @param codeVerifier The code verifier string
  * @returns The code challenge string
  */
-function generateCodeChallenge(codeVerifier: string): string {
+export function generateCodeChallenge(codeVerifier: string): string {
   const hash = crypto.createHash('sha256');
   hash.update(codeVerifier);
   return hash.digest('base64url');
@@ -55,7 +57,7 @@ function generateCodeChallenge(codeVerifier: string): string {
  * Generate PKCE code verifier and challenge pair
  * @returns Object containing code_verifier and code_challenge
  */
-function generatePKCEPair(): { code_verifier: string; code_challenge: string } {
+export function generatePKCEPair(): { code_verifier: string; code_challenge: string } {
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = generateCodeChallenge(codeVerifier);
   return { code_verifier: codeVerifier, code_challenge: codeChallenge };
@@ -117,7 +119,7 @@ export interface IQwenOAuth2Client {
 /**
  * Qwen OAuth2 client implementation
  */
-class QwenOAuth2Client implements IQwenOAuth2Client {
+export class QwenOAuth2Client implements IQwenOAuth2Client {
   private credentials: QwenCredentials = {};
   private proxy?: string;
 
@@ -292,7 +294,7 @@ class QwenOAuth2Client implements IQwenOAuth2Client {
 let tokenUpdateCallback: ((tokens: QwenCredentials) => Promise<void>) | null =
   null;
 
-export async function getQwenOauthClient(
+export async function getQwenOAuthClient(
   config: Config,
 ): Promise<QwenOAuth2Client> {
   const client = new QwenOAuth2Client({
@@ -364,14 +366,14 @@ async function authWithQwenDeviceFlow(
         console.log('Attempting to open browser...');
         const childProcess = await open(deviceAuth.verification_uri_complete);
         childProcess.on('error', () => {
-          console.log(
-            'Unable to open browser automatically, please visit the link manually.',
-          );
+          console.log('Visit this URL to authorize:');
+          console.log(deviceAuth.verification_uri_complete);
+          qrcode.generate(deviceAuth.verification_uri_complete, { small: true });
         });
       } catch (_err) {
-        console.log(
-          'Unable to open browser automatically, please visit the link manually.',
-        );
+        console.log('Visit this URL to authorize:');
+        console.log(deviceAuth.verification_uri_complete);
+        qrcode.generate(deviceAuth.verification_uri_complete, { small: true });
       }
     }
 
