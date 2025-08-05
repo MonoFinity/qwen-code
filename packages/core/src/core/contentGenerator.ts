@@ -198,7 +198,9 @@ export async function createContentGenerator(
     }
 
     // Import required classes dynamically
-    const { getQwenOAuthClient: getQwenOauthClient } = await import('../code_assist/qwenOAuth2.js');
+    const { getQwenOAuthClient: getQwenOauthClient } = await import(
+      '../code_assist/qwenOAuth2.js'
+    );
     const { QwenTokenManager } = await import('./qwenTokenManager.js');
     const { QwenOpenAIContentGenerator } = await import(
       './qwenOpenAIContentGenerator.js'

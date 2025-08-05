@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2025 Qwen
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,7 +9,6 @@ import open from 'open';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import * as os from 'os';
-// @ts-expect-error - qrcode-terminal doesn't have perfect TypeScript support
 import qrcode from 'qrcode-terminal';
 import { Config } from '../config/config.js';
 
@@ -57,7 +56,10 @@ export function generateCodeChallenge(codeVerifier: string): string {
  * Generate PKCE code verifier and challenge pair
  * @returns Object containing code_verifier and code_challenge
  */
-export function generatePKCEPair(): { code_verifier: string; code_challenge: string } {
+export function generatePKCEPair(): {
+  code_verifier: string;
+  code_challenge: string;
+} {
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = generateCodeChallenge(codeVerifier);
   return { code_verifier: codeVerifier, code_challenge: codeChallenge };
@@ -368,7 +370,9 @@ async function authWithQwenDeviceFlow(
         childProcess.on('error', () => {
           console.log('Visit this URL to authorize:');
           console.log(deviceAuth.verification_uri_complete);
-          qrcode.generate(deviceAuth.verification_uri_complete, { small: true });
+          qrcode.generate(deviceAuth.verification_uri_complete, {
+            small: true,
+          });
         });
       } catch (_err) {
         console.log('Visit this URL to authorize:');
