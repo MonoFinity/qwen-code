@@ -144,17 +144,14 @@ export function QwenOAuthProgress({
       </Box>
 
       {qrCodeData && (
-        <Box marginTop={1}>
-          <Text>Or scan the QR code below:</Text>
-          <Box
-            marginTop={1}
-            borderStyle="single"
-            borderColor={Colors.AccentBlue}
-            padding={1}
-          >
+        <>
+          <Box marginTop={1}>
+            <Text>Or scan the QR code below:</Text>
+          </Box>
+          <Box marginTop={1}>
             <Text>{qrCodeData}</Text>
           </Box>
-        </Box>
+        </>
       )}
 
       <Box marginTop={1}>
