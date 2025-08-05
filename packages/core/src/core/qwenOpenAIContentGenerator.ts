@@ -16,7 +16,8 @@ import {
   EmbedContentResponse,
 } from '@google/genai';
 
-const QWEN_BASE_URL = 'https://api.qwen.ai';
+// const QWEN_BASE_URL = 'https://api.qwen.ai';
+const QWEN_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 
 /**
  * OpenAI Content Generator wrapper that uses Qwen OAuth tokens with automatic refresh

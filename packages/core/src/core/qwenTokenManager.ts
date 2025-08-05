@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { IQwenOAuth2Client } from '../code_assist/qwenOAuth2.js';
+import { IQwenOAuth2Client } from '../code_assist/qwenOauth2.js';
 
 /**
  * Manages Qwen OAuth access tokens with automatic refresh capability
