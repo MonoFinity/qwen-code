@@ -13,7 +13,7 @@ import {
   type QwenCredentials,
   type DeviceAuthorizationResponse,
   type DeviceTokenResponse,
-} from './qwenOauth2.js';
+} from './qwenOAuth2.js';
 
 // Mock qrcode-terminal
 vi.mock('qrcode-terminal', () => ({

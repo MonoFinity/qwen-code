@@ -234,10 +234,9 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
   const {
     isQwenAuthenticating,
     deviceAuth,
-    qrCodeData,
     isQwenAuth,
     cancelQwenAuth,
-  } = useQwenAuth(settings, config, isAuthenticating);
+  } = useQwenAuth(settings, isAuthenticating);
 
   useEffect(() => {
     if (settings.merged.selectedAuthType) {
@@ -871,7 +870,6 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
               {isQwenAuth && isQwenAuthenticating ? (
                 <QwenOAuthProgress
                   deviceAuth={deviceAuth || undefined}
-                  qrCodeData={qrCodeData}
                   onTimeout={() => {
                     setAuthError('Qwen OAuth authentication timed out. Please try again.');
                     cancelQwenAuth();

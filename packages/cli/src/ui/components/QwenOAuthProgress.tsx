@@ -1,44 +1,60 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2025 Qwen
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import Spinner from 'ink-spinner';
+import  qrcode from 'qrcode-terminal';
 import { Colors } from '../colors.js';
-
-interface DeviceAuthorizationInfo {
-  verification_uri: string;
-  verification_uri_complete: string;
-  user_code: string;
-  expires_in: number;
-}
+import { DeviceAuthorizationInfo } from '../hooks/useQwenAuth.js';
 
 interface QwenOAuthProgressProps {
   onTimeout: () => void;
   onCancel: () => void;
   deviceAuth?: DeviceAuthorizationInfo;
-  qrCodeData?: string | null;
 }
 
 export function QwenOAuthProgress({
   onTimeout,
   onCancel,
   deviceAuth,
-  qrCodeData,
 }: QwenOAuthProgressProps): React.JSX.Element {
   const [timeRemaining, setTimeRemaining] = useState<number>(
     deviceAuth?.expires_in || 300, // Default 5 minutes
   );
   const [dots, setDots] = useState<string>('');
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
 
   useInput((_, key) => {
     if (key.escape) {
       onCancel();
     }
   });
+
+  // Generate QR code when device auth is available
+  useEffect(() => {
+    if (!deviceAuth) {
+      setQrCodeData(null);
+      return;
+    }
+
+    // Generate QR code string
+    const generateQR = () => {
+      try {
+        qrcode.generate(deviceAuth.verification_uri_complete, { small: true }, (qrcode: string) => {
+          setQrCodeData(qrcode);
+        });
+      } catch (error) {
+        console.error('Failed to generate QR code:', error);
+        setQrCodeData(null);
+      }
+    };
+
+    generateQR();
+  }, [deviceAuth]);
 
   // Countdown timer
   useEffect(() => {
@@ -86,7 +102,7 @@ export function QwenOAuthProgress({
       >
         <Box>
           <Text>
-            <Spinner type="dots" /> Initializing Qwen OAuth authentication...
+            <Spinner type="dots" /> Waiting for Qwen OAuth authentication...
           </Text>
         </Box>
         <Box marginTop={1}>
@@ -118,19 +134,9 @@ export function QwenOAuthProgress({
         </Text>
       </Box>
 
-      <Box marginTop={1}>
-        <Text>Or visit {deviceAuth.verification_uri} and enter code:</Text>
-      </Box>
-
-      <Box marginTop={1} borderStyle="single" borderColor={Colors.Gray} padding={1}>
-        <Text color={Colors.AccentYellow} bold>
-          {deviceAuth.user_code}
-        </Text>
-      </Box>
-
       {qrCodeData && (
         <Box marginTop={1}>
-          <Text>Scan the QR code below:</Text>
+          <Text>Or scan the QR code below:</Text>
           <Box
             marginTop={1}
             borderStyle="single"
@@ -153,12 +159,6 @@ export function QwenOAuthProgress({
           Time remaining: {formatTime(timeRemaining)}
         </Text>
         <Text color={Colors.AccentPurple}>(Press ESC to cancel)</Text>
-      </Box>
-
-      <Box marginTop={1}>
-        <Text color={Colors.Gray} italic>
-          After authorizing, you can close the browser tab.
-        </Text>
       </Box>
     </Box>
   );

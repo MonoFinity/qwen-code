@@ -8,14 +8,16 @@ import crypto from 'crypto';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import * as os from 'os';
-import qrcode from 'qrcode-terminal';
+
 import open from 'open';
+import { EventEmitter } from 'events';
 import { Config } from '../config/config.js';
 
 // OAuth Endpoints
 const QWEN_OAUTH_BASE_URL = process.env.DEBUG
   ? 'http://localhost:57721'
   : 'https://chat.qwen.ai';
+// const QWEN_OAUTH_BASE_URL = 'http://30.221.178.254:57721';
 const QWEN_OAUTH_DEVICE_CODE_ENDPOINT = `${QWEN_OAUTH_BASE_URL}/api/v2/oauth2/device/code`;
 const QWEN_OAUTH_TOKEN_ENDPOINT = `${QWEN_OAUTH_BASE_URL}/api/v2/oauth/oauth2/token`;
 
@@ -295,50 +297,17 @@ export class QwenOAuth2Client implements IQwenOAuth2Client {
   }
 }
 
-let tokenUpdateCallback: ((tokens: QwenCredentials) => Promise<void>) | null =
-  null;
-
-// UI integration callbacks
-let deviceAuthCallback:
-  | ((deviceAuth: DeviceAuthorizationResponse) => void)
-  | null = null;
-let authProgressCallback:
-  | ((status: 'success' | 'error' | 'polling', message?: string) => void)
-  | null = null;
-let qrCodeCallback: ((qrCodeData: string, url: string) => void) | null = null;
-
-export function setDeviceAuthCallback(
-  callback: ((deviceAuth: DeviceAuthorizationResponse) => void) | null,
-) {
-  deviceAuthCallback = callback;
-}
-
-export function setAuthProgressCallback(
-  callback:
-    | ((status: 'success' | 'error' | 'polling', message?: string) => void)
-    | null,
-) {
-  authProgressCallback = callback;
-}
-
-export function setQrCodeCallback(
-  callback: ((qrCodeData: string, url: string) => void) | null,
-) {
-  qrCodeCallback = callback;
+export enum QwenOAuth2Event {
+  AuthUri = 'auth-uri',
+  AuthProgress = 'auth-progress',
 }
 
 /**
- * Generate QR code as string data
- * @param text The text to encode in the QR code
- * @returns Promise that resolves to QR code string
+ * Global event emitter instance for QwenOAuth2 authentication events
  */
-function generateQRCodeString(text: string): Promise<string> {
-  return new Promise((resolve) => {
-    qrcode.generate(text, { small: true }, (qrString: string) => {
-      resolve(qrString);
-    });
-  });
-}
+export const qwenOAuth2Events = new EventEmitter();
+
+
 
 export async function getQwenOAuthClient(
   config: Config,
@@ -346,11 +315,6 @@ export async function getQwenOAuthClient(
   const client = new QwenOAuth2Client({
     proxy: config.getProxy(),
   });
-
-  // Set up token update callback
-  tokenUpdateCallback = async (tokens: QwenCredentials) => {
-    await cacheQwenCredentials(tokens);
-  };
 
   // If there are cached creds on disk, they always take precedence
   if (await loadCachedQwenCredentials(client)) {
@@ -392,46 +356,15 @@ async function authWithQwenDeviceFlow(
       code_challenge_method: 'S256',
     });
 
-    // Send device auth info to UI callback if available
-    if (deviceAuthCallback) {
-      deviceAuthCallback(deviceAuth);
-    } else {
-      // Fallback to console logs if no UI callback is set
-      console.log('\n=== Qwen OAuth Device Authorization ===');
-      console.log(
-        `Please visit the following URL on your phone or browser for authorization:`,
-      );
-      console.log(`\n${deviceAuth.verification_uri_complete}\n`);
-      console.log(
-        `Or visit ${deviceAuth.verification_uri} and enter user code: ${deviceAuth.user_code}`,
-      );
-      console.log('\nYou can also scan the following QR code:');
-      console.log('(Display QR code in terminal, or copy the link to browser)');
-      console.log(
-        `\nAuthorization URL: ${deviceAuth.verification_uri_complete}\n`,
-      );
-    }
+    console.log('\n=== Qwen OAuth Device Authorization ===');
+    console.log(
+      `Please visit the following URL on your phone or browser for authorization:`,
+    );
+    console.log(`\n${deviceAuth.verification_uri_complete}\n`);
 
-    // Show QR code and URL information
-    const showQRCodeAndURL = async () => {
-      if (qrCodeCallback) {
-        // Generate QR code string and send to UI
-        try {
-          const qrCodeData = await generateQRCodeString(
-            deviceAuth.verification_uri_complete,
-          );
-          qrCodeCallback(qrCodeData, deviceAuth.verification_uri_complete);
-        } catch (error) {
-          console.error('Failed to generate QR code:', error);
-        }
-      } else if (!deviceAuthCallback) {
-        // Fallback to console output
-        console.log('Visit this URL to authorize:');
-        console.log(deviceAuth.verification_uri_complete);
-        qrcode.generate(deviceAuth.verification_uri_complete, {
-          small: true,
-        });
-      }
+    const showFallbackMessage = () => {
+      // Emit device authorization event for UI integration
+      qwenOAuth2Events.emit(QwenOAuth2Event.AuthUri, deviceAuth);
     };
 
     // If browser launch is not suppressed, try to open the URL
@@ -445,27 +378,22 @@ async function authWithQwenDeviceFlow(
         // causing the entire Node.js process to crash.
         if (childProcess) {
           childProcess.on('error', () => {
-            if (!deviceAuthCallback) {
-              console.log(
-                'Failed to open browser. Visit this URL to authorize:',
-              );
-            }
-            showQRCodeAndURL();
+            console.log('Failed to open browser. Visit this URL to authorize:');
+            showFallbackMessage();
           });
         }
       } catch (_err) {
-        await showQRCodeAndURL();
+        showFallbackMessage();
       }
     } else {
-      // Browser launch is suppressed, show QR code and URL
-      await showQRCodeAndURL();
+      // Browser launch is suppressed, show fallback message
+      showFallbackMessage();
     }
 
-    if (authProgressCallback) {
-      authProgressCallback('polling', 'Waiting for authorization...');
-    } else {
-      console.log('Waiting for authorization...\n');
-    }
+    // Emit auth progress event
+    qwenOAuth2Events.emit(QwenOAuth2Event.AuthProgress, 'polling', 'Waiting for authorization...');
+
+    console.log('Waiting for authorization...\n');
 
     // Poll for the token
     const pollInterval = 5000; // 5 seconds
@@ -497,31 +425,30 @@ async function authWithQwenDeviceFlow(
           client.setCredentials(credentials);
 
           // Cache the new tokens
-          if (tokenUpdateCallback) {
-            await tokenUpdateCallback(credentials);
-          }
+          await cacheQwenCredentials(credentials);
 
-          if (authProgressCallback) {
-            authProgressCallback(
-              'success',
-              'Authentication successful! Access token obtained.',
-            );
-          } else {
-            console.log('Authentication successful! Access token obtained.');
-          }
+          // Emit auth progress success event
+          qwenOAuth2Events.emit(
+            QwenOAuth2Event.AuthProgress,
+            'success',
+            'Authentication successful! Access token obtained.',
+          );
+
+          console.log('Authentication successful! Access token obtained.');
           return true;
         }
 
         // If status is 'pending', continue polling
         if (tokenResponse.status === 'pending') {
-          if (authProgressCallback) {
-            authProgressCallback(
-              'polling',
-              `Polling... (attempt ${attempt + 1}/${maxAttempts})`,
-            );
-          } else {
-            process.stdout.write('.');
-          }
+          // Emit polling progress event
+          qwenOAuth2Events.emit(
+            QwenOAuth2Event.AuthProgress,
+            'polling',
+            `Polling... (attempt ${attempt + 1}/${maxAttempts})`,
+          );
+
+          process.stdout.write('.');
+          
           await new Promise((resolve) => setTimeout(resolve, pollInterval));
           continue;
         }
@@ -532,29 +459,30 @@ async function authWithQwenDeviceFlow(
         if (errorMessage.includes('401')) {
           const message =
             'Device code expired or invalid, please restart the authorization process.';
-          if (authProgressCallback) {
-            authProgressCallback('error', message);
-          } else {
-            console.error('\n' + message);
-          }
+          
+          // Emit error event
+          qwenOAuth2Events.emit(QwenOAuth2Event.AuthProgress, 'error', message);
+          
+          console.error('\n' + message);
           return false;
         }
+        
         const message = `Error polling for token: ${errorMessage}`;
-        if (authProgressCallback) {
-          authProgressCallback('error', message);
-        } else {
-          console.error('\n' + message);
-        }
+        
+        // Emit error event
+        qwenOAuth2Events.emit(QwenOAuth2Event.AuthProgress, 'error', message);
+        
+        console.error('\n' + message);
         await new Promise((resolve) => setTimeout(resolve, pollInterval));
       }
     }
 
     const timeoutMessage = 'Authorization timeout, please restart the process.';
-    if (authProgressCallback) {
-      authProgressCallback('error', timeoutMessage);
-    } else {
-      console.error('\n' + timeoutMessage);
-    }
+    
+    // Emit timeout error event
+    qwenOAuth2Events.emit(QwenOAuth2Event.AuthProgress, 'error', timeoutMessage);
+    
+    console.error('\n' + timeoutMessage);
     return false;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
