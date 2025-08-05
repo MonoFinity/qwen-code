@@ -16,17 +16,19 @@ import {
   EmbedContentResponse,
 } from '@google/genai';
 
-// const QWEN_BASE_URL = 'https://api.qwen.ai';
-const QWEN_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+// Default fallback base URL if no endpoint is provided
+const DEFAULT_QWEN_BASE_URL =
+  'https://aa.dashscope.aliyuncs.com/compatible-mode/v1';
 
 /**
- * OpenAI Content Generator wrapper that uses Qwen OAuth tokens with automatic refresh
+ * Qwen Content Generator that uses Qwen OAuth tokens with automatic refresh
  */
-export class QwenOpenAIContentGenerator extends OpenAIContentGenerator {
+export class QwenContentGenerator extends OpenAIContentGenerator {
   private qwenClient: IQwenOAuth2Client;
 
   // Token management (integrated from QwenTokenManager)
   private currentToken: string | null = null;
+  private currentEndpoint: string | null = null;
   private refreshPromise: Promise<string> | null = null;
 
   constructor(qwenClient: IQwenOAuth2Client, model: string, config: Config) {
@@ -34,85 +36,104 @@ export class QwenOpenAIContentGenerator extends OpenAIContentGenerator {
     super('', model, config);
     this.qwenClient = qwenClient;
 
-    // Qwen OAuth only supports calling specified models at the specified endpoint
-    this.client.baseURL = QWEN_BASE_URL;
+    // Set default base URL, will be updated dynamically
+    this.client.baseURL = DEFAULT_QWEN_BASE_URL;
   }
 
   /**
-   * Override to use dynamic token
+   * Get the current endpoint URL
+   */
+  private getCurrentEndpoint(): string {
+    return this.currentEndpoint || DEFAULT_QWEN_BASE_URL;
+  }
+
+  /**
+   * Override to use dynamic token and endpoint
    */
   async generateContent(
     request: GenerateContentParameters,
   ): Promise<GenerateContentResponse> {
     return this.withValidToken(async (token) => {
-      // Temporarily update the API key
+      // Temporarily update the API key and base URL
       const originalApiKey = this.client.apiKey;
+      const originalBaseURL = this.client.baseURL;
       this.client.apiKey = token;
+      this.client.baseURL = this.getCurrentEndpoint();
 
       try {
         return await super.generateContent(request);
       } finally {
-        // Restore original API key
+        // Restore original values
         this.client.apiKey = originalApiKey;
+        this.client.baseURL = originalBaseURL;
       }
     });
   }
 
   /**
-   * Override to use dynamic token
+   * Override to use dynamic token and endpoint
    */
   async generateContentStream(
     request: GenerateContentParameters,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     const token = await this.getTokenWithRetry();
 
-    // Update the API key before streaming
+    // Update the API key and base URL before streaming
     const originalApiKey = this.client.apiKey;
+    const originalBaseURL = this.client.baseURL;
     this.client.apiKey = token;
+    this.client.baseURL = this.getCurrentEndpoint();
 
     try {
       return await super.generateContentStream(request);
     } catch (error) {
-      // Restore original API key on error
+      // Restore original values on error
       this.client.apiKey = originalApiKey;
+      this.client.baseURL = originalBaseURL;
       throw error;
     }
-    // Note: We don't restore the key in finally for streaming because
+    // Note: We don't restore the values in finally for streaming because
     // the generator may continue to be used after this method returns
   }
 
   /**
-   * Override to use dynamic token
+   * Override to use dynamic token and endpoint
    */
   async countTokens(
     request: CountTokensParameters,
   ): Promise<CountTokensResponse> {
     return this.withValidToken(async (token) => {
       const originalApiKey = this.client.apiKey;
+      const originalBaseURL = this.client.baseURL;
       this.client.apiKey = token;
+      this.client.baseURL = this.getCurrentEndpoint();
 
       try {
         return await super.countTokens(request);
       } finally {
         this.client.apiKey = originalApiKey;
+        this.client.baseURL = originalBaseURL;
       }
     });
   }
 
   /**
-   * Override to use dynamic token
+   * Override to use dynamic token and endpoint
    */
   async embedContent(
     request: EmbedContentParameters,
   ): Promise<EmbedContentResponse> {
     return this.withValidToken(async (token) => {
       const originalApiKey = this.client.apiKey;
+      const originalBaseURL = this.client.baseURL;
       this.client.apiKey = token;
+      this.client.baseURL = this.getCurrentEndpoint();
 
       try {
         return await super.embedContent(request);
       } finally {
         this.client.apiKey = originalApiKey;
+        this.client.baseURL = originalBaseURL;
       }
     });
   }
@@ -172,6 +193,11 @@ export class QwenOpenAIContentGenerator extends OpenAIContentGenerator {
       const { token } = await this.qwenClient.getAccessToken();
       if (token) {
         this.currentToken = token;
+        // Also update endpoint from current credentials
+        const credentials = this.qwenClient.getCredentials();
+        if (credentials.endpoint) {
+          this.currentEndpoint = credentials.endpoint;
+        }
         return token;
       }
     } catch (error) {
@@ -213,6 +239,13 @@ export class QwenOpenAIContentGenerator extends OpenAIContentGenerator {
       }
 
       this.currentToken = credentials.access_token;
+
+      // Update endpoint if provided
+      if (credentials.endpoint) {
+        this.currentEndpoint = credentials.endpoint;
+        console.log('Qwen endpoint updated:', credentials.endpoint);
+      }
+
       console.log('Qwen access token refreshed successfully');
       return credentials.access_token;
     } catch (error) {
@@ -251,5 +284,21 @@ export class QwenOpenAIContentGenerator extends OpenAIContentGenerator {
       errorMessage.includes('access denied') ||
       (errorMessage.includes('token') && errorMessage.includes('expired'))
     );
+  }
+
+  /**
+   * Get the current cached token (may be expired)
+   */
+  getCurrentToken(): string | null {
+    return this.currentToken;
+  }
+
+  /**
+   * Clear the cached token and endpoint
+   */
+  clearToken(): void {
+    this.currentToken = null;
+    this.currentEndpoint = null;
+    this.refreshPromise = null;
   }
 }

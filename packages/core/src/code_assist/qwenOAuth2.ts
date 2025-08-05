@@ -17,7 +17,7 @@ import { Config } from '../config/config.js';
 const QWEN_OAUTH_BASE_URL = process.env.DEBUG
   ? 'http://localhost:57721'
   : 'https://chat.qwen.ai';
-// const QWEN_OAUTH_BASE_URL = 'http://30.221.178.254:57721';
+
 const QWEN_OAUTH_DEVICE_CODE_ENDPOINT = `${QWEN_OAUTH_BASE_URL}/api/v2/oauth2/device/code`;
 const QWEN_OAUTH_TOKEN_ENDPOINT = `${QWEN_OAUTH_BASE_URL}/api/v2/oauth/oauth2/token`;
 
@@ -30,7 +30,7 @@ const QWEN_DIR = '.qwen';
 const QWEN_CREDENTIAL_FILENAME = 'oauth_creds.json';
 
 // Token Configuration
-const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // 5 minutes
+const TOKEN_REFRESH_BUFFER_MS = 30 * 1000; // 30 seconds
 
 /**
  * PKCE (Proof Key for Code Exchange) utilities
@@ -78,6 +78,7 @@ export interface QwenCredentials {
   id_token?: string;
   expiry_date?: number;
   token_type?: string;
+  endpoint?: string;
 }
 
 /**
@@ -261,6 +262,7 @@ export class QwenOAuth2Client implements IQwenOAuth2Client {
         access_token: responseData.data.access_token,
         token_type: responseData.data.token_type,
         refresh_token: this.credentials.refresh_token, // Preserve existing refresh token
+        endpoint: responseData.data.endpoint, // Include endpoint if provided
       };
 
       // Set expiry date based on expires_in field
@@ -274,6 +276,11 @@ export class QwenOAuth2Client implements IQwenOAuth2Client {
       // Preserve refresh token if not returned
       if (!tokens.refresh_token && this.credentials.refresh_token) {
         tokens.refresh_token = this.credentials.refresh_token;
+      }
+
+      // Preserve endpoint if not returned
+      if (!tokens.endpoint && this.credentials.endpoint) {
+        tokens.endpoint = this.credentials.endpoint;
       }
 
       // Set expiry date based on expires_in field or default
@@ -416,6 +423,7 @@ async function authWithQwenDeviceFlow(
             access_token: tokenResponse.access_token,
             refresh_token: tokenResponse.refresh_token,
             token_type: tokenResponse.token_type,
+            endpoint: (tokenResponse as { endpoint?: string }).endpoint, // Include endpoint if provided
           };
 
           // Set expiry date based on expires_in field

@@ -837,7 +837,7 @@ export class GeminiClient {
 
     if (isAuthError) {
       console.warn('Qwen OAuth authentication error detected:', errorMessage);
-      // The QwenOpenAIContentGenerator should automatically handle token refresh
+      // The QwenContentGenerator should automatically handle token refresh
       // If it still fails, it likely means the refresh token is also expired
       console.log(
         'Note: If this persists, you may need to re-authenticate with Qwen OAuth',
