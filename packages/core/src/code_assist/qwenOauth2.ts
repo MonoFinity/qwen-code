@@ -151,20 +151,20 @@ class QwenOAuth2Client implements IQwenOAuth2Client {
     code_challenge: string;
     code_challenge_method: string;
   }): Promise<DeviceAuthorizationResponse> {
-    const body = new URLSearchParams({
+    const bodyData = {
       client_id: QWEN_OAUTH_CLIENT_ID,
       scope: options.scope.join(' '),
       code_challenge: options.code_challenge,
       code_challenge_method: options.code_challenge_method,
-    });
+    };
 
     const response = await fetch(QWEN_OAUTH_DEVICE_CODE_ENDPOINT, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: body.toString(),
+      body: JSON.stringify(bodyData),
     });
 
     if (!response.ok) {
@@ -174,27 +174,30 @@ class QwenOAuth2Client implements IQwenOAuth2Client {
       );
     }
 
-    return (await response.json()) as DeviceAuthorizationResponse;
+    const result = (await response.json()) as DeviceAuthorizationResponse;
+    console.log('Device authorization result:', result);
+
+    return result;
   }
 
   async pollDeviceToken(options: {
     device_code: string;
     code_verifier: string;
   }): Promise<DeviceTokenResponse> {
-    const body = new URLSearchParams({
+    const bodyData = {
       grant_type: 'device_code',
       client_id: QWEN_OAUTH_CLIENT_ID,
       device_code: options.device_code,
       code_verifier: options.code_verifier,
-    });
+    };
 
     const response = await fetch(QWEN_OAUTH_TOKEN_ENDPOINT, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: body.toString(),
+      body: JSON.stringify(bodyData),
     });
 
     if (!response.ok) {
