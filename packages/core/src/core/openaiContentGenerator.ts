@@ -78,7 +78,7 @@ interface OpenAIResponseFormat {
 }
 
 export class OpenAIContentGenerator implements ContentGenerator {
-  private client: OpenAI;
+  protected client: OpenAI;
   private model: string;
   private config: Config;
   private streamingToolCalls: Map<

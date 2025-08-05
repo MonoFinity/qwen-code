@@ -44,6 +44,7 @@ export enum AuthType {
   USE_VERTEX_AI = 'vertex-ai',
   CLOUD_SHELL = 'cloud-shell',
   USE_OPENAI = 'openai',
+  QWEN_OAUTH = 'qwen-oauth',
 }
 
 export type ContentGeneratorConfig = {
@@ -129,6 +130,15 @@ export function createContentGeneratorConfig(
     return contentGeneratorConfig;
   }
 
+  if (authType === AuthType.QWEN_OAUTH) {
+    // For Qwen OAuth, we'll handle the API key dynamically in createContentGenerator
+    // Set a special marker to indicate this is Qwen OAuth
+    contentGeneratorConfig.apiKey = 'QWEN_OAUTH_DYNAMIC_TOKEN';
+    contentGeneratorConfig.model = config.getModel() || 'qwen-coder-plus';
+
+    return contentGeneratorConfig;
+  }
+
   return contentGeneratorConfig;
 }
 
@@ -180,6 +190,39 @@ export async function createContentGenerator(
 
     // Always use OpenAIContentGenerator, logging is controlled by enableOpenAILogging flag
     return new OpenAIContentGenerator(config.apiKey, config.model, gcConfig);
+  }
+
+  if (config.authType === AuthType.QWEN_OAUTH) {
+    if (config.apiKey !== 'QWEN_OAUTH_DYNAMIC_TOKEN') {
+      throw new Error('Invalid Qwen OAuth configuration');
+    }
+
+    // Import required classes dynamically
+    const { getQwenOauthClient } = await import('../code_assist/qwenOauth2.js');
+    const { QwenTokenManager } = await import('./qwenTokenManager.js');
+    const { QwenOpenAIContentGenerator } = await import(
+      './qwenOpenAIContentGenerator.js'
+    );
+
+    try {
+      // Get the Qwen OAuth client
+      const qwenClient = await getQwenOauthClient(gcConfig);
+
+      // Create token manager
+      const tokenManager = new QwenTokenManager(qwenClient);
+
+      // Create the content generator with dynamic token management
+      return new QwenOpenAIContentGenerator(
+        tokenManager,
+        config.model,
+        gcConfig,
+      );
+    } catch (error) {
+      console.error('Failed to create Qwen OAuth content generator:', error);
+      throw new Error(
+        `Failed to initialize Qwen OAuth: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   throw new Error(
