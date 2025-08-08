@@ -1,0 +1,86 @@
+services:
+  martiangames-php:
+    image: php:8.2-fpm
+    container_name: martiangames-php
+    profiles:
+      - martiangames
+    env_file:
+      - env/.env.local
+      - env/.env
+    environment:
+      - APP_ENV=docker
+      - PHP_DEBUG=${PHP_DEBUG:-on}
+      - TZ=${TIMEZONE:-UTC}
+      - DB_HOST=martiangames-mysql
+      - DB_NAME=${DB_NAME:-martian_games}
+      - DB_USER=${DB_USER:-shade}
+      - DB_PASSWORD=${DB_PASSWORD:-local_dev_password}
+    volumes:
+      - ../martiangames/html:/var/www/martiangames/html:cached
+      - ../shared:/var/www/shared:cached
+      - ../shared-deps:/var/www/shared-deps:cached
+    networks:
+      - multi-mvc-network
+    depends_on:
+      - martiangames-mysql
+
+  martiangames-apache:
+    image: httpd:2.4
+    container_name: martiangames-apache
+    profiles:
+      - martiangames
+    ports:
+      - "${MARTIANGAMES_PORT:-8004}:80"
+    volumes:
+      - ../martiangames/html:/var/www/martiangames/html:cached
+      - ../shared:/var/www/shared:cached
+      - ./httpd.conf:/usr/local/apache2/conf/httpd.conf
+    depends_on:
+      - martiangames-php
+    networks:
+      - multi-mvc-network
+    env_file:
+      - env/.env.local
+      - env/.env
+
+  martiangames-mysql:
+    build:
+      context: .
+      dockerfile: Dockerfile.mysql
+    container_name: martiangames-mysql
+    profiles:
+      - martiangames
+    environment:
+      - MYSQL_DATABASE=${DB_NAME:-martian_games}
+      - MYSQL_USER=${DB_USER:-shade}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-local_dev_password}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-root_password}
+    volumes:
+      - martiangames-mysql-data:/var/lib/mysql
+    networks:
+      - multi-mvc-network
+    ports:
+      - "${MARTIANGAMES_DB_PORT:-3307}:3306"
+
+  martiangames-phpmyadmin:
+    image: phpmyadmin:5
+    container_name: martiangames-phpmyadmin
+    profiles:
+      - martiangames
+    environment:
+      - PMA_HOST=martiangames-mysql
+      - PMA_USER=${DB_USER:-shade}
+      - PMA_PASSWORD=${DB_PASSWORD:-local_dev_password}
+    ports:
+      - "${PHPMYADMIN_PORT:-8082}:80"
+    depends_on:
+      - martiangames-mysql
+    networks:
+      - multi-mvc-network
+
+networks:
+  multi-mvc-network:
+    external: true
+
+volumes:
+  martiangames-mysql-data: {}

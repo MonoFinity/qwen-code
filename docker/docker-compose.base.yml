@@ -1,0 +1,62 @@
+
+# Base Compose file for qwen-code and related services
+
+
+services:
+  qwen-code:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: qwen-code:latest
+    container_name: qwen-code
+    volumes:
+      - qwen-data:/home/node/app/data
+    environment:
+      - QWEN_ENV=docker
+      - TZ=${TIMEZONE:-UTC}
+    networks:
+      - qwen-network
+    env_file:
+      - env/.env.local
+      - env/.env
+
+  martiangames-mysql:
+    build:
+      context: .
+      dockerfile: Dockerfile.mysql
+    container_name: martiangames-mysql
+    environment:
+      - MYSQL_DATABASE=${DB_NAME:-martian_games}
+      - MYSQL_USER=${DB_USER:-shade}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-local_dev_password}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-root_password}
+    volumes:
+      - martiangames-mysql-data:/var/lib/mysql
+    networks:
+      - qwen-network
+    ports:
+      - "${MARTIANGAMES_DB_PORT:-3307}:3306"
+
+
+  martiangames-phpmyadmin:
+    image: phpmyadmin:5
+    container_name: martiangames-phpmyadmin
+    environment:
+      - PMA_HOST=martiangames-mysql
+      - PMA_USER=${DB_USER:-shade}
+      - PMA_PASSWORD=${DB_PASSWORD:-local_dev_password}
+    ports:
+      - "${PHPMYADMIN_PORT:-8082}:80"
+    depends_on:
+      - martiangames-mysql
+    networks:
+      - qwen-network
+
+volumes:
+  qwen-data:
+    driver: local
+  martiangames-mysql-data: {}
+
+networks:
+  qwen-network:
+    driver: bridge

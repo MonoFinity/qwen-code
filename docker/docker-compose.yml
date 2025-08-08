@@ -1,0 +1,23 @@
+
+# Main Compose file for qwen-code
+# Includes base config and example volume usage
+
+services:
+  qwen-code:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: qwen-code:latest
+    container_name: qwen-code
+    stdin_open: true
+    tty: true
+    volumes:
+      - qwen-data:/home/node/app/data
+    # Example: extend base config (uncomment if needed)
+    # extends:
+    #   file: docker-compose.base.yml
+    #   service: node
+
+volumes:
+  qwen-data:
+    driver: local

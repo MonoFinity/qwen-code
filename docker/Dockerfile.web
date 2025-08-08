@@ -1,0 +1,38 @@
+# www/docker/Dockerfile.web
+
+# Stage 1: Pull Composer separately to use its binary
+FROM composer:2 AS composer-downloader
+
+# Stage 2: Main PHP image
+FROM php:8.3-fpm-alpine
+
+# Install system packages and PHP extensions
+RUN apk add --no-cache \
+    git curl bash gnupg libarchive-tools \
+    libzip-dev libpng-dev libjpeg-turbo-dev freetype-dev \
+    # PHP extensions
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd zip pdo pdo_mysql \
+    # Clean up temp files
+    && rm -rf /var/cache/apk/*
+
+# Install Composer from previous stage
+COPY --from=composer-downloader /usr/bin/composer /usr/bin/composer
+
+# Optional: Install PowerShell (uncommon in PHP dev but if you use it, sure)
+RUN apk add --no-cache --repository https://dl-cdn.alpinelinux.org/alpine/edge/community/ powershell
+
+# Optional: Install Node.js + NPM if needed (e.g., for asset builds)
+RUN apk add --no-cache nodejs npm
+
+# Optional: Install project-wide NPM packages (but better done per project Dockerfile)
+# RUN npm install
+
+# Set working directory
+WORKDIR /var/www
+
+# Set file ownership to web user
+RUN chown -R www-data:www-data /var/www
+
+# Default command
+CMD ["php-fpm"]

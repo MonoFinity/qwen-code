@@ -1,0 +1,12 @@
+{
+  "name": "qwen-code-dev",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "qwen-code",
+  "workspaceFolder": "/home/node/app",
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
+    }
+  }
+}

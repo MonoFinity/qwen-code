@@ -20,6 +20,24 @@
       "problemMatcher": [],
       "label": "npm: build: vscode-ide-companion",
       "detail": "npm run build -w packages/vscode-ide-companion"
+    },
+    {
+      "label": "Build Docker Environment",
+      "type": "shell",
+      "command": "docker-compose -f docker/docker-compose.yml build",
+      "group": "build"
+    },
+    {
+      "label": "Run Docker Container",
+      "type": "shell",
+      "command": "docker-compose -f docker/docker-compose.yml up",
+      "group": "test"
+    },
+    {
+      "label": "Build & Run Docker",
+      "type": "shell",
+      "command": "docker-compose -f docker/docker-compose.yml up --build -d && docker-compose -f docker/docker-compose.yml logs --tail=50 || echo 'Docker build or run failed.'",
+      "group": "test"
     }
   ]
 }
