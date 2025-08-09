@@ -13,7 +13,7 @@ let logger: vscode.OutputChannel;
 let log: (message: string) => void = () => {};
 
 export async function activate(context: vscode.ExtensionContext) {
-  logger = vscode.window.createOutputChannel('Gemini CLI IDE Companion');
+  logger = vscode.window.createOutputChannel('Qwen Code IDE Companion');
   log = createLogger(context, logger);
   log('Extension activated');
   ideServer = new IDEServer(log);
@@ -25,11 +25,47 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('gemini-cli.runGeminiCLI', () => {
-      const geminiCmd = 'gemini';
-      const terminal = vscode.window.createTerminal(`Gemini CLI`);
-      terminal.show();
-      terminal.sendText(geminiCmd);
+    vscode.commands.registerCommand('qwen-code.runQwenCode', async () => {
+      const prompt = await vscode.window.showInputBox({
+        prompt: 'Ask Qwen 3 Coder Plus',
+      });
+      if (!prompt) {
+        return;
+      }
+      const apiKey = process.env.QWEN_API_KEY;
+      if (!apiKey) {
+        vscode.window.showErrorMessage('QWEN_API_KEY environment variable not set');
+        return;
+      }
+      try {
+        const res = await fetch(
+          'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: 'qwen3-coder-plus',
+              messages: [{ role: 'user', content: prompt }],
+            }),
+          },
+        );
+        const data = await res.json();
+        const answer = data.choices?.[0]?.message?.content;
+        if (typeof answer === 'string') {
+          logger.appendLine(answer);
+          logger.show();
+        } else {
+          logger.appendLine(JSON.stringify(data, null, 2));
+          logger.show();
+          vscode.window.showErrorMessage('Unexpected response from Qwen API');
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        vscode.window.showErrorMessage(`Qwen request failed: ${message}`);
+      }
     }),
   );
 }
