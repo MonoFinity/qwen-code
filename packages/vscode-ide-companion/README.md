@@ -8,6 +8,10 @@ The Qwen Code Companion extension seamlessly integrates [Qwen Code](https://gith
 
 - Selection Context: Qwen Code can easily access your cursor's position and selected text within the editor, giving it valuable context directly from your current work.
 
+# Usage
+
+Set the `QWEN_API_KEY` environment variable before launching VS Code. Run **Qwen Code: Run** from the command palette to send a prompt to the `qwen3-coder-plus` model. Responses appear in the Qwen Code output channel.
+
 # Requirements
 
 To use this extension, you'll need:
