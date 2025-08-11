@@ -11,6 +11,8 @@ services:
     container_name: qwen-code
     stdin_open: true
     tty: true
+    environment:
+      - NO_BROWSER=true
     volumes:
       - qwen-data:/home/node/app/data
     # Example: extend base config (uncomment if needed)

@@ -47,15 +47,7 @@ const argv = yargs(hideBin(process.argv))
       'Path to write the final image URI. Used for CI/CD pipeline integration.',
   }).argv;
 
-let sandboxCommand;
-try {
-  sandboxCommand = execSync('node scripts/sandbox_command.js')
-    .toString()
-    .trim();
-} catch {
-  console.warn('ERROR: could not detect sandbox container command');
-  process.exit(0);
-}
+let sandboxCommand = 'docker';
 
 if (sandboxCommand === 'sandbox-exec') {
   console.warn(
@@ -68,7 +60,7 @@ console.log(`using ${sandboxCommand} for sandboxing`);
 
 const baseImage = cliPkgJson.config.sandboxImageUri;
 const customImage = argv.i;
-const baseDockerfile = 'Dockerfile';
+const baseDockerfile = 'docker/Dockerfile';
 const customDockerfile = argv.f;
 
 if (!baseImage?.length) {
@@ -119,7 +111,7 @@ chmodSync(
   0o755,
 );
 
-const buildStdout = process.env.VERBOSE ? 'inherit' : 'ignore';
+const buildStdout = 'inherit';
 
 function buildImage(imageName, dockerfile) {
   console.log(`building ${imageName} ... (can be slow first time)`);
@@ -140,7 +132,7 @@ function buildImage(imageName, dockerfile) {
     `${buildCommand} ${
       process.env.BUILD_SANDBOX_FLAGS || ''
     } --build-arg CLI_VERSION_ARG=${npmPackageVersion} -f "${dockerfile}" -t "${finalImageName}" .`,
-    { stdio: buildStdout, shell: '/bin/bash' },
+    { stdio: buildStdout },
   );
   console.log(`built ${finalImageName}`);
 
