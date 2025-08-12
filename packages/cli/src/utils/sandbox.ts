@@ -87,7 +87,7 @@ async function shouldUseCurrentUserInSandbox(): Promise<boolean> {
         );
         return true;
       }
-    } catch (_err) {
+    } catch {
       // Silently ignore if /etc/os-release is not found or unreadable.
       // The default (false) will be applied in this case.
       console.warn(
@@ -420,7 +420,8 @@ export async function start_sandbox(
     for (let mount of process.env.SANDBOX_MOUNTS.split(',')) {
       if (mount.trim()) {
         // parse mount as from:to:opts
-        let [from, to, opts] = mount.trim().split(':');
+        const [from, ...rest] = mount.trim().split(':');
+        let [to, opts] = rest;
         to = to || from; // default to mount at same path inside container
         opts = opts || 'ro'; // default to read-only
         mount = `${from}:${to}:${opts}`;

@@ -1,5 +1,6 @@
 # Stage 1: Build the application
-FROM docker.io/library/node:20-slim as builder
+FROM docker.io/library/node:20-slim AS builder
+
 
 WORKDIR /app
 
@@ -84,4 +85,4 @@ RUN npm install --omit=dev \
   && npm rebuild
 
 # Set default entrypoint to qwen CLI
-CMD ["node", "bundle/gemini.js"]
+CMD ["node", "bundle/gemini.mjs"]

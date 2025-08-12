@@ -36,6 +36,29 @@ In addition to a project settings file, a project's `.gemini` directory can cont
 - [Custom sandbox profiles](#sandboxing) (e.g., `.qwen/sandbox-macos-custom.sb`, `.qwen/sandbox.Dockerfile`).
 
 ### Available settings in `settings.json`:
+- **`providerProfile`** ("online" | "local"):
+  - Description: Simple toggle to switch between online providers (Google/Gemini) and local OpenAI-compatible providers (e.g., Qwen via DashScope-compatible gateway, Ollama, vLLM, LMDeploy).
+  - Behavior:
+    - `"local"`: Sets auth to OpenAI-compatible mode. Uses `openai.baseUrl` and `openai.model` from settings if provided. Requires `OPENAI_API_KEY` in the environment (can be a placeholder if your local server ignores API keys).
+    - `"online"`: Defaults to Google login in interactive environments, or Cloud Shell when `CLOUD_SHELL=true`.
+  - Example:
+    ```json
+    "providerProfile": "local",
+    "openai": {
+      "baseUrl": "http://localhost:11434/v1/",
+      "model": "qwen2.5-coder"
+    }
+    ```
+
+- **`openai`** (object):
+  - Description: Optional OpenAI-compatible settings used when `providerProfile` is `local` or when you want to point to a custom endpoint.
+  - Properties:
+    - `baseUrl` (string): The base URL of your OpenAI-compatible server (must end with `/v1/`).
+    - `model` (string): Default model name for the OpenAI-compatible server.
+  - Notes:
+    - You must have `OPENAI_API_KEY` in the environment. If your local server doesn't check it, set any placeholder (e.g., `sk-local`).
+    - These map to the environment variables `OPENAI_BASE_URL` and `OPENAI_MODEL` at runtime.
+
 
 - **`contextFileName`** (string or array of strings):
   - **Description:** Specifies the filename for context files (e.g., `GEMINI.md`, `AGENTS.md`). Can be a single filename or a list of accepted filenames.
@@ -244,6 +267,11 @@ In addition to a project settings file, a project's `.gemini` directory can cont
 
 ```json
 {
+  "providerProfile": "local",
+  "openai": {
+    "baseUrl": "http://localhost:11434/v1/",
+    "model": "qwen2.5-coder"
+  },
   "theme": "GitHub",
   "sandbox": "docker",
   "toolDiscoveryCommand": "bin/get_tools",
@@ -301,6 +329,42 @@ The CLI automatically loads environment variables from an `.env` file. The loadi
   - Specifies the default Gemini model to use.
   - Overrides the hardcoded default
   - Example: `export GEMINI_MODEL="gemini-2.5-flash"`
+\- **`OPENAI_API_KEY`**:
+  - API key for OpenAI-compatible mode (required when `providerProfile` is `local`).
+  - If your local server doesn't validate keys, set a placeholder like `sk-local`.
+  - Also supports `QWEN_API_KEY` as a fallback for DashScope/Aliyun users.
+\- **`OPENAI_BASE_URL`**:
+  - Base URL for an OpenAI-compatible endpoint (e.g., `http://localhost:11434/v1/`).
+  - Overridden by `settings.openai.baseUrl` when `providerProfile` is `local`.
+\- **`OPENAI_MODEL`**:
+  - Default model for OpenAI-compatible mode.
+  - Overridden by `settings.openai.model` when `providerProfile` is `local`.
+
+### DashScope (Aliyun) quick setup
+
+To use Qwen models via DashScope's OpenAI-compatible API:
+
+```json
+{
+  "providerProfile": "local",
+  "openai": {
+    "baseUrl": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/",
+    "model": "qwen3-coder-plus"
+  }
+}
+```
+
+Then set your key (either works):
+
+```bash
+export QWEN_API_KEY="<your_dashscope_key>"
+# or
+export OPENAI_API_KEY="$QWEN_API_KEY"
+```
+
+Notes:
+- The base URL must end with `/v1/`.
+- Some regions use `https://dashscope.aliyuncs.com/compatible-mode/v1/` instead.
 - **`GOOGLE_API_KEY`**:
   - Your Google Cloud API key.
   - Required for using Vertex AI in express mode.

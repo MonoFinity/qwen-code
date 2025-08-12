@@ -151,14 +151,35 @@ export async function main() {
     process.exit(0);
   }
 
-  // Set a default auth type if one isn't set.
-  if (!settings.merged.selectedAuthType) {
-    if (process.env.CLOUD_SHELL === 'true') {
-      settings.setValue(
-        SettingScope.User,
-        'selectedAuthType',
-        AuthType.CLOUD_SHELL,
-      );
+  // Apply providerProfile mapping before auth: a simple toggle for local vs online
+  // - local: USE_OPENAI with optional settings.openai overrides
+  // - online: prefer LOGIN_WITH_GOOGLE if available; otherwise leave as-is
+  if (settings.merged.providerProfile === 'local') {
+    if (settings.merged.openai?.baseUrl) {
+      process.env.OPENAI_BASE_URL = settings.merged.openai.baseUrl;
+    }
+    if (settings.merged.openai?.model) {
+      process.env.OPENAI_MODEL = settings.merged.openai.model;
+    }
+    // Set default auth type to OpenAI if not explicitly chosen
+    if (!settings.merged.selectedAuthType) {
+      settings.setValue(SettingScope.User, 'selectedAuthType', AuthType.USE_OPENAI);
+    }
+  } else if (settings.merged.providerProfile === 'online') {
+    // For online profile, default to Google login in interactive environments
+    if (!settings.merged.selectedAuthType) {
+      if (process.env.CLOUD_SHELL === 'true') {
+        settings.setValue(SettingScope.User, 'selectedAuthType', AuthType.CLOUD_SHELL);
+      } else {
+        settings.setValue(SettingScope.User, 'selectedAuthType', AuthType.LOGIN_WITH_GOOGLE);
+      }
+    }
+  } else {
+    // No profile specified: keep legacy behavior (Cloud Shell default only)
+    if (!settings.merged.selectedAuthType) {
+      if (process.env.CLOUD_SHELL === 'true') {
+        settings.setValue(SettingScope.User, 'selectedAuthType', AuthType.CLOUD_SHELL);
+      }
     }
   }
 
@@ -284,7 +305,6 @@ export async function main() {
 function setWindowTitle(title: string, settings: LoadedSettings) {
   if (!settings.merged.hideWindowTitle) {
     const windowTitle = (process.env.CLI_TITLE || `Qwen - ${title}`).replace(
-      // eslint-disable-next-line no-control-regex
       /[\x00-\x1F\x7F]/g,
       '',
     );

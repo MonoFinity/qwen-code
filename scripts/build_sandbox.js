@@ -118,7 +118,7 @@ function buildImage(imageName, dockerfile) {
   const buildCommand =
     sandboxCommand === 'podman'
       ? `${sandboxCommand} build --authfile=<(echo '{}')`
-      : `${sandboxCommand} build`;
+      : `${sandboxCommand} build --no-cache`;
 
   const npmPackageVersion = JSON.parse(
     readFileSync(join(process.cwd(), 'package.json'), 'utf-8'),

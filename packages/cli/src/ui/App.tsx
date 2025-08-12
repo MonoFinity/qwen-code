@@ -422,7 +422,7 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
   const isValidPath = useCallback((filePath: string): boolean => {
     try {
       return fs.existsSync(filePath) && fs.statSync(filePath).isFile();
-    } catch (_e) {
+    } catch {
       return false;
     }
   }, []);

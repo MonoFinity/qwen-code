@@ -105,22 +105,34 @@ async function main() {
   try {
     execSync('pkill -f "otelcol-contrib"');
     console.log('✅ Stopped existing otelcol-contrib process.');
-  } catch (_e) {} // eslint-disable-line no-empty
+  } catch (_e) {
+    // intentionally ignored if process not running
+  }
   try {
     execSync('pkill -f "jaeger"');
     console.log('✅ Stopped existing jaeger process.');
-  } catch (_e) {} // eslint-disable-line no-empty
-  try {
-    if (fileExists(OTEL_LOG_FILE)) fs.unlinkSync(OTEL_LOG_FILE);
-    console.log('✅ Deleted old collector log.');
-  } catch (e) {
-    if (e.code !== 'ENOENT') console.error(e);
+  } catch (_e) {
+    // intentionally ignored if process not running
   }
   try {
-    if (fileExists(JAEGER_LOG_FILE)) fs.unlinkSync(JAEGER_LOG_FILE);
+    if (fileExists(OTEL_LOG_FILE)) {
+      fs.unlinkSync(OTEL_LOG_FILE);
+    }
+    console.log('✅ Deleted old collector log.');
+  } catch (e) {
+    if (e.code !== 'ENOENT') {
+      console.error(e);
+    }
+  }
+  try {
+    if (fileExists(JAEGER_LOG_FILE)) {
+      fs.unlinkSync(JAEGER_LOG_FILE);
+    }
     console.log('✅ Deleted old jaeger log.');
   } catch (e) {
-    if (e.code !== 'ENOENT') console.error(e);
+    if (e.code !== 'ENOENT') {
+      console.error(e);
+    }
   }
 
   let jaegerProcess, collectorProcess;
@@ -138,7 +150,9 @@ async function main() {
     originalSandboxSetting,
   );
 
-  if (!fileExists(OTEL_DIR)) fs.mkdirSync(OTEL_DIR, { recursive: true });
+  if (!fileExists(OTEL_DIR)) {
+    fs.mkdirSync(OTEL_DIR, { recursive: true });
+  }
   fs.writeFileSync(OTEL_CONFIG_FILE, OTEL_CONFIG_CONTENT);
   console.log('📄 Wrote OTEL collector config.');
 
