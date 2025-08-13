@@ -85,4 +85,4 @@ RUN npm install --omit=dev \
   && npm rebuild
 
 # Set default entrypoint to qwen CLI
-CMD ["node", "bundle/gemini.mjs"]
+CMD ["node", "bundle/gemini.cjs"]

@@ -17,8 +17,13 @@ export type PackageJson = BasePackageJson & {
   };
 };
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Support both ESM and CJS bundles
+// In CJS, __dirname/__filename are defined; in ESM, we derive from import.meta.url
+const __filenameESM = fileURLToPath(import.meta.url);
+// Use a dynamic global check to avoid TypeScript errors in ESM
+const __filenameFallback: string | undefined = (globalThis as any).__filename;
+const __filenameEffective = __filenameFallback || __filenameESM;
+const __dirnameEffective = path.dirname(__filenameEffective);
 
 let packageJson: PackageJson | undefined;
 
@@ -27,7 +32,7 @@ export async function getPackageJson(): Promise<PackageJson | undefined> {
     return packageJson;
   }
 
-  const result = await readPackageUp({ cwd: __dirname });
+  const result = await readPackageUp({ cwd: __dirnameEffective });
   if (!result) {
     // TODO: Maybe bubble this up as an error.
     return;

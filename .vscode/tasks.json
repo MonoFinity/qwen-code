@@ -2,6 +2,12 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Package: Dist",
+      "type": "shell",
+      "command": "npm run package:dist",
+      "problemMatcher": []
+    },
+    {
       "type": "npm",
       "script": "build",
       "group": {
