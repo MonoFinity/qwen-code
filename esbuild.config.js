@@ -5,7 +5,7 @@ build({
   entryPoints: ['packages/cli/index.ts'],
   bundle: true,
   platform: 'node',
-  outfile: 'bundle/gemini.mjs',
+  outfile: 'bundle/qwen.mjs',
   sourcemap: true,
   target: ['node20'],
   format: 'esm',

@@ -66,7 +66,7 @@ REM 5) Fallback: run the installed ESM entry directly from global prefix
 set "NPM_PREFIX="
 for /f "usebackq delims=" %%I in (`npm prefix -g 2^>nul`) do set "NPM_PREFIX=%%I"
 if not defined NPM_PREFIX set "NPM_PREFIX=%APPDATA%\npm"
-set "QWEN_MJS=%NPM_PREFIX%\node_modules\@qwen-code\qwen-code\bundle\gemini.mjs"
+set "QWEN_MJS=%NPM_PREFIX%\node_modules\@qwen-code\qwen-code\bundle\qwen.mjs"
 if exist "%QWEN_MJS%" (
   echo Running CLI directly...
   node "%QWEN_MJS%" %*
@@ -82,7 +82,7 @@ if defined NPM_GLOBAL_BIN (
   )
 ) else (
   if defined NPM_PREFIX (
-    echo   node "%NPM_PREFIX%\node_modules\@qwen-code\qwen-code\bundle\gemini.mjs"
+    echo   node "%NPM_PREFIX%\node_modules\@qwen-code\qwen-code\bundle\qwen.mjs"
   ) else (
     echo   qwen
   )

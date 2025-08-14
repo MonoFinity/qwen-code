@@ -17,7 +17,6 @@ COPY .editorconfig ./
 COPY .gitignore ./
 COPY .dockerignore ./
 COPY Makefile ./Makefile
-COPY ROADMAP.md ./ROADMAP.md
 COPY QWEN.md ./QWEN.md
 RUN npm install
 RUN npm run bundle
@@ -72,7 +71,6 @@ COPY --from=builder /app/bundle /home/node/app/bundle
 COPY --from=builder /app/package.json /home/node/app/package.json
 COPY --from=builder /app/README.md /home/node/app/README.md
 COPY --from=builder /app/QWEN.md /home/node/app/QWEN.md
-COPY --from=builder /app/ROADMAP.md /home/node/app/ROADMAP.md
 COPY --from=builder /app/Makefile /home/node/app/Makefile
 COPY --from=builder /app/.npmrc /home/node/app/.npmrc
 COPY --from=builder /app/.prettierrc.json /home/node/app/.prettierrc.json
@@ -85,4 +83,4 @@ RUN npm install --omit=dev \
   && npm rebuild
 
 # Set default entrypoint to qwen CLI
-CMD ["node", "bundle/gemini.cjs"]
+CMD ["node", "bundle/qwen.mjs"]
