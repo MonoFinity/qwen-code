@@ -132,6 +132,22 @@ export function createContentGeneratorConfig(
     contentGeneratorConfig.model =
       process.env.OPENAI_MODEL || DEFAULT_GEMINI_MODEL;
 
+    // If we're using a QWEN/DashScope key (OPENAI_API_KEY may have been populated from QWEN_API_KEY)
+    // and the user hasn't specified a base URL, assume DashScope's OpenAI-compatible endpoint.
+    // Also avoid sending a Gemini default model to DashScope (would 404). Provide a sensible
+    // default Qwen model if the current model still looks like a Gemini default.
+    if (process.env.QWEN_API_KEY) {
+      if (!process.env.OPENAI_BASE_URL) {
+        process.env.OPENAI_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+      }
+      const modelEnvUnset = !process.env.OPENAI_MODEL;
+      const looksLikeGemini = /gemini/i.test(contentGeneratorConfig.model);
+      if (modelEnvUnset && looksLikeGemini) {
+        // Common broadly capable DashScope model; user can override with OPENAI_MODEL.
+        contentGeneratorConfig.model = 'qwen-plus';
+      }
+    }
+
     return contentGeneratorConfig;
   }
 
