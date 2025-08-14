@@ -65,7 +65,7 @@ USER node
 
 WORKDIR /home/node/app
 
-
+hi
 # Only copy built output and production files to final image
 COPY --from=builder /app/bundle /home/node/app/bundle
 COPY --from=builder /app/package.json /home/node/app/package.json

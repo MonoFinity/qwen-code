@@ -30,7 +30,8 @@ export async function reportError(
   reportingDir = os.tmpdir(), // for testing
 ): Promise<void> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const reportFileName = `gemini-client-error-${type}-${timestamp}.json`;
+  // Use provider-neutral prefix to avoid confusion (works for Qwen/OpenAI/Gemini)
+  const reportFileName = `qwen-client-error-${type}-${timestamp}.json`;
   const reportPath = path.join(reportingDir, reportFileName);
 
   let errorToReport: { message: string; stack?: string };
