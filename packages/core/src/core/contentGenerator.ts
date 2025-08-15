@@ -76,7 +76,9 @@ export function createContentGeneratorConfig(
   const googleApiKey = process.env.GOOGLE_API_KEY || undefined;
   const googleCloudProject = process.env.GOOGLE_CLOUD_PROJECT || undefined;
   const googleCloudLocation = process.env.GOOGLE_CLOUD_LOCATION || undefined;
-  const openaiApiKey = process.env.OPENAI_API_KEY;
+  // Support OpenAI-compatible providers that use different env var names
+  const openaiApiKey =
+    process.env.OPENAI_API_KEY || process.env.QWEN_API_KEY;
 
   // Use runtime model from config if available; otherwise, fall back to parameter or default
   const effectiveModel = config.getModel() || DEFAULT_GEMINI_MODEL;
@@ -115,7 +117,11 @@ export function createContentGeneratorConfig(
     authType === AuthType.USE_VERTEX_AI &&
     (googleApiKey || (googleCloudProject && googleCloudLocation))
   ) {
-    contentGeneratorConfig.apiKey = googleApiKey;
+    if (googleCloudProject && googleCloudLocation) {
+      contentGeneratorConfig.apiKey = undefined;
+    } else {
+      contentGeneratorConfig.apiKey = googleApiKey;
+    }
     contentGeneratorConfig.vertexai = true;
 
     return contentGeneratorConfig;
@@ -125,6 +131,22 @@ export function createContentGeneratorConfig(
     contentGeneratorConfig.apiKey = openaiApiKey;
     contentGeneratorConfig.model =
       process.env.OPENAI_MODEL || DEFAULT_GEMINI_MODEL;
+
+    // If we're using a QWEN/DashScope key (OPENAI_API_KEY may have been populated from QWEN_API_KEY)
+    // and the user hasn't specified a base URL, assume DashScope's OpenAI-compatible endpoint.
+    // Also avoid sending a Gemini default model to DashScope (would 404). Provide a sensible
+    // default Qwen model if the current model still looks like a Gemini default.
+    if (process.env.QWEN_API_KEY) {
+      if (!process.env.OPENAI_BASE_URL) {
+        process.env.OPENAI_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+      }
+      const modelEnvUnset = !process.env.OPENAI_MODEL;
+      const looksLikeGemini = /gemini/i.test(contentGeneratorConfig.model);
+      if (modelEnvUnset && looksLikeGemini) {
+        // Common broadly capable DashScope model; user can override with OPENAI_MODEL.
+        contentGeneratorConfig.model = 'qwen-plus';
+      }
+    }
 
     return contentGeneratorConfig;
   }

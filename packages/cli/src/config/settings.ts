@@ -60,6 +60,13 @@ export interface Settings {
   theme?: string;
   customThemes?: Record<string, CustomTheme>;
   selectedAuthType?: AuthType;
+  // Simple toggle to switch between online (Google/Gemini) and local (OpenAI-compatible) providers
+  providerProfile?: 'online' | 'local';
+  // Optional OpenAI-compatible settings (for local profile or custom endpoints)
+  openai?: {
+    baseUrl?: string;
+    model?: string;
+  };
   sandbox?: boolean | string;
   coreTools?: string[];
   excludeTools?: string[];

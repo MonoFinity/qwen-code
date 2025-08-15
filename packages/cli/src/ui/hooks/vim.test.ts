@@ -65,18 +65,19 @@ describe('useVim hook', () => {
       },
       text,
       move: vi.fn().mockImplementation((direction: string) => {
-        let [row, col] = cursorState.pos;
-        const _line = lines[row] || '';
+        const [row, col] = cursorState.pos;
+        const line = lines[row] || '';
+        let newCol = col;
         if (direction === 'left') {
-          col = Math.max(0, col - 1);
+          newCol = Math.max(0, col - 1);
         } else if (direction === 'right') {
-          col = Math.min(line.length, col + 1);
+          newCol = Math.min(line.length, col + 1);
         } else if (direction === 'home') {
-          col = 0;
+          newCol = 0;
         } else if (direction === 'end') {
-          col = line.length;
+          newCol = line.length;
         }
-        cursorState.pos = [row, col];
+        cursorState.pos = [row, newCol];
       }),
       del: vi.fn(),
       moveToOffset: vi.fn(),
@@ -109,7 +110,6 @@ describe('useVim hook', () => {
       vimAppendAtCursor: vi.fn().mockImplementation(() => {
         // Append moves cursor right (vim 'a' behavior - position after current char)
         const [row, col] = cursorState.pos;
-        const _line = lines[row] || '';
         // In vim, 'a' moves cursor to position after current character
         // This allows inserting at the end of the line
         cursorState.pos = [row, col + 1];
@@ -458,7 +458,7 @@ describe('useVim hook', () => {
       expect(testBuffer.vimMoveWordForward).toHaveBeenCalledWith(1);
     });
 
-    it('should handle first c key (sets pending change state)', () => {
+  it('should handle first c key (sets pending change state)', () => {
       const { result } = renderVimHook();
 
       act(() => {

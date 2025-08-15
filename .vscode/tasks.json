@@ -2,6 +2,64 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "MCP Auto-loader",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": [
+        "-ExecutionPolicy", "Bypass",
+        "-File", ".\\scripts\\mcp-autoloader.ps1",
+        "-Verbose"
+      ],
+      "options": {
+        "shell": {
+          "executable": "powershell.exe"
+        }
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    },
+    {
+      "label": "MCP Install Dependencies",
+      "type": "shell", 
+      "command": "powershell.exe",
+      "args": [
+        "-ExecutionPolicy", "Bypass",
+        "-File", ".\\scripts\\mcp-autoloader.ps1", 
+        "-Force",
+        "-Verbose"
+      ],
+      "options": {
+        "shell": {
+          "executable": "powershell.exe"
+        }
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Package: Dist",
+      "type": "shell",
+      "command": "npm run package:dist",
+      "problemMatcher": []
+    },
+    {
       "type": "npm",
       "script": "build",
       "group": {

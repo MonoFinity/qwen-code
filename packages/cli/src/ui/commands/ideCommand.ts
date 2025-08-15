@@ -141,7 +141,7 @@ export const ideCommand = (config: Config | null): SlashCommand | null => {
               },
               Date.now(),
             );
-          } catch (_error) {
+          } catch {
             context.ui.addItem(
               {
                 type: 'error',

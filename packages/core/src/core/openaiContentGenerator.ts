@@ -93,7 +93,12 @@ export class OpenAIContentGenerator implements ContentGenerator {
   constructor(apiKey: string, model: string, config: Config) {
     this.model = model;
     this.config = config;
-    const baseURL = process.env.OPENAI_BASE_URL || '';
+    let baseURL = process.env.OPENAI_BASE_URL || '';
+    // Auto-detect DashScope if QWEN_API_KEY present and no explicit baseURL provided.
+    if (!baseURL && process.env.QWEN_API_KEY) {
+      baseURL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+      process.env.OPENAI_BASE_URL = baseURL; // persist for any downstream logging
+    }
 
     // Configure timeout settings - using progressive timeouts
     const timeoutConfig = {
@@ -186,10 +191,16 @@ export class OpenAIContentGenerator implements ContentGenerator {
         ...samplingParams,
       };
 
+      // Qwen/DashScope OpenAI-compatible endpoint rejects an explicit empty
+      // tools array (schema enforces minItems >= 1). Only include the field
+      // if there is at least one function declaration after conversion.
       if (request.config?.tools) {
-        createParams.tools = await this.convertGeminiToolsToOpenAI(
+        const convertedTools = await this.convertGeminiToolsToOpenAI(
           request.config.tools,
         );
+        if (convertedTools.length > 0) {
+          createParams.tools = convertedTools;
+        }
       }
       // console.log('createParams', createParams);
       const completion = (await this.client.chat.completions.create(
@@ -313,9 +324,12 @@ export class OpenAIContentGenerator implements ContentGenerator {
       };
 
       if (request.config?.tools) {
-        createParams.tools = await this.convertGeminiToolsToOpenAI(
+        const convertedTools = await this.convertGeminiToolsToOpenAI(
           request.config.tools,
         );
+        if (convertedTools.length > 0) {
+          createParams.tools = convertedTools;
+        }
       }
 
       // console.log('createParams', createParams);
@@ -729,8 +743,9 @@ export class OpenAIContentGenerator implements ContentGenerator {
   }
 
   private async convertGeminiToolsToOpenAI(
-    geminiTools: ToolListUnion,
+    geminiTools: ToolListUnion | undefined,
   ): Promise<OpenAI.Chat.ChatCompletionTool[]> {
+    if (!geminiTools || geminiTools.length === 0) return [];
     const openAITools: OpenAI.Chat.ChatCompletionTool[] = [];
 
     for (const tool of geminiTools) {
@@ -1549,9 +1564,12 @@ export class OpenAIContentGenerator implements ContentGenerator {
 
     // Convert tools if present
     if (request.config?.tools) {
-      openaiRequest.tools = await this.convertGeminiToolsToOpenAI(
+      const convertedTools = await this.convertGeminiToolsToOpenAI(
         request.config.tools,
       );
+      if (convertedTools.length > 0) {
+        openaiRequest.tools = convertedTools;
+      }
     }
 
     return openaiRequest;

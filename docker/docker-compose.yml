@@ -1,4 +1,3 @@
-
 # Main Compose file for qwen-code
 # Includes base config and example volume usage
 
@@ -11,8 +10,17 @@ services:
     container_name: qwen-code
     stdin_open: true
     tty: true
+    environment:
+      - NO_BROWSER=true
     volumes:
       - qwen-data:/home/node/app/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     # Example: extend base config (uncomment if needed)
     # extends:
     #   file: docker-compose.base.yml

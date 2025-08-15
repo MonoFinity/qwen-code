@@ -39,8 +39,12 @@ export const validateAuthMethod = (authMethod: string): string | null => {
   }
 
   if (authMethod === AuthType.USE_OPENAI) {
+    // Accept QWEN_API_KEY as a fallback (DashScope) and propagate to OPENAI_API_KEY
+    if (!process.env.OPENAI_API_KEY && process.env.QWEN_API_KEY) {
+      process.env.OPENAI_API_KEY = process.env.QWEN_API_KEY;
+    }
     if (!process.env.OPENAI_API_KEY) {
-      return 'OPENAI_API_KEY environment variable not found. You can enter it interactively or add it to your .env file.';
+      return 'OPENAI_API_KEY (or QWEN_API_KEY) environment variable not found. Provide one in your environment or .env file.';
     }
     return null;
   }

@@ -63,6 +63,7 @@ import {
   type OpenFiles,
   ideContext,
 } from '@qwen-code/qwen-code-core';
+import { DiscoveredMCPTool } from '@qwen-code/qwen-code-core';
 import { validateAuthMethod } from '../config/auth.js';
 import { useLogger } from './hooks/useLogger.js';
 import { StreamingContext } from './contexts/StreamingContext.js';
@@ -363,21 +364,19 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
 ⚡ Or you can utilize a Gemini API Key. See: https://goo.gle/gemini-cli-docs-auth#gemini-api-key
 ⚡ You can switch authentication methods by typing /auth`;
           }
-        } else {
-          if (isPaidTier) {
-            // Default fallback message for other cases (like consecutive 429s)
-            message = `⚡ Automatically switching from ${currentModel} to ${fallbackModel} for faster responses for the remainder of this session.
+  } else if (isPaidTier) {
+    // Default fallback message for other cases (like consecutive 429s)
+    message = `⚡ Automatically switching from ${currentModel} to ${fallbackModel} for faster responses for the remainder of this session.
 ⚡ Possible reasons for this are that you have received multiple consecutive capacity errors or you have reached your daily ${currentModel} quota limit
 ⚡ To continue accessing the ${currentModel} model today, consider using /auth to switch to using a paid API key from AI Studio at https://aistudio.google.com/apikey`;
-          } else {
-            // Default fallback message for other cases (like consecutive 429s)
-            message = `⚡ Automatically switching from ${currentModel} to ${fallbackModel} for faster responses for the remainder of this session.
+  } else {
+    // Default fallback message for other cases (like consecutive 429s)
+    message = `⚡ Automatically switching from ${currentModel} to ${fallbackModel} for faster responses for the remainder of this session.
 ⚡ Possible reasons for this are that you have received multiple consecutive capacity errors or you have reached your daily ${currentModel} quota limit
 ⚡ To increase your limits, upgrade to a Gemini Code Assist Standard or Enterprise plan with higher limits at https://goo.gle/set-up-gemini-code-assist
 ⚡ Or you can utilize a Gemini API Key. See: https://goo.gle/gemini-cli-docs-auth#gemini-api-key
 ⚡ You can switch authentication methods by typing /auth`;
-          }
-        }
+  }
 
         // Add message to UI history
         addItem(
@@ -422,7 +421,7 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
   const isValidPath = useCallback((filePath: string): boolean => {
     try {
       return fs.existsSync(filePath) && fs.statSync(filePath).isFile();
-    } catch (_e) {
+    } catch {
       return false;
     }
   }, []);
@@ -698,6 +697,51 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
 
   const initialPrompt = useMemo(() => config.getQuestion(), [config]);
   const geminiClient = config.getGeminiClient();
+
+  // On first startup, show a concise summary of available MCP tools by server
+  useEffect(() => {
+    let cancelled = false;
+    const showMcpSummary = async () => {
+      try {
+        const mcpServers = config.getMcpServers() || {};
+        const serverNames = Object.keys(mcpServers);
+        if (serverNames.length === 0) {
+          return;
+        }
+
+        const registry = await config.getToolRegistry();
+        const allTools = registry.getAllTools();
+        const parts: string[] = [];
+        let total = 0;
+        for (const name of serverNames) {
+          const tools = allTools.filter(
+            (t) => t instanceof DiscoveredMCPTool && t.serverName === name,
+          ) as DiscoveredMCPTool[];
+          total += tools.length;
+          parts.push(`${name} (${tools.length})`);
+        }
+        if (cancelled) {
+          return;
+        }
+        addItem(
+          {
+            type: MessageType.INFO,
+            text:
+              total > 0
+                ? `MCP tools available: ${total} — ${parts.join(', ')} (type /mcp for details)`
+                : `MCP servers detected (${serverNames.length}), tools will appear when ready (type /mcp to check status)`,
+          },
+          Date.now(),
+        );
+      } catch {
+        // ignore
+      }
+    };
+    showMcpSummary();
+    return () => {
+      cancelled = true;
+    };
+  }, [config, addItem]);
 
   useEffect(() => {
     if (

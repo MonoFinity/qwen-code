@@ -35,9 +35,9 @@ exporters:
   googlecloud:
     project: "${projectId}"
     metric:
-      prefix: "custom.googleapis.com/gemini_cli"
+      prefix: "custom.googleapis.com/qwen_cli"
     log:
-      default_log_name: "gemini_cli"
+      default_log_name: "qwen_cli"
   debug:
     verbosity: detailed
 service:
@@ -166,7 +166,7 @@ async function main() {
 
   console.log(`\n✨ Local OTEL collector for GCP is running.`);
   console.log(
-    '\n🚀 To send telemetry, run the Gemini CLI in a separate terminal window.',
+    '\n🚀 To send telemetry, run the Qwen CLI in a separate terminal window.',
   );
   console.log(`\n📄 Collector logs are being written to: ${OTEL_LOG_FILE}`);
   console.log(
@@ -174,7 +174,7 @@ async function main() {
   );
   console.log(`\n📊 View your telemetry data in Google Cloud Console:`);
   console.log(
-    `   - Logs: https://console.cloud.google.com/logs/query;query=logName%3D%22projects%2F${projectId}%2Flogs%2Fgemini_cli%22?project=${projectId}`,
+    `   - Logs: https://console.cloud.google.com/logs/query;query=logName%3D%22projects%2F${projectId}%2Flogs%2Fqwen_cli%22?project=${projectId}`,
   );
   console.log(
     `   - Metrics: https://console.cloud.google.com/monitoring/metrics-explorer?project=${projectId}`,

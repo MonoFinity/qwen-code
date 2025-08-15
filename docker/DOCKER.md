@@ -1,5 +1,3 @@
-
-
 # Docker Setup for qwen-code
 
 This document outlines the Docker setup for the `qwen-code` project. All Docker files are located in the `docker/` directory.
@@ -65,11 +63,13 @@ flowchart TD
 ## Quick Reference VS Code Tasks & Commands
 
 ### VS Code Tasks
+
 - **Build Docker Environment**: Builds the Docker image
 - **Run Docker Container**: Runs the container
 - **Build & Run Docker**: Builds and runs the container in one step
 
 ### Terminal Commands
+
 ```pwsh
 # Build the Docker image
 docker-compose -f docker/docker-compose.yml build
@@ -94,14 +94,14 @@ docker build -f docker/Dockerfile .
 
 We use Docker to create a consistent and reproducible environment for building and running the `qwen-code` application. The setup consists of the following files in `docker/`:
 
--   `Dockerfile`: Multi-stage build for production and development
--   `docker-compose.yml`: Compose file for easy local development
--   `.dockerignore`: Excludes unnecessary files from build context
+- `Dockerfile`: Multi-stage build for production and development
+- `docker-compose.yml`: Compose file for easy local development
+- `.dockerignore`: Excludes unnecessary files from build context
 
 ## Prerequisites
 
--   [Docker](https://docs.docker.com/get-docker/)
--   [Docker Compose](https://docs.docker.com/compose/install/) (usually included with Docker Desktop)
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/) (usually included with Docker Desktop)
 
 ## Building the Docker Image
 
@@ -136,30 +136,34 @@ docker-compose -f docker/docker-compose.yml exec qwen-code /bin/bash
 The `Dockerfile` uses a multi-stage build approach:
 
 1.  **Builder Stage**:
-    -   Starts with a `node:20-slim` base image.
-    -   Installs all necessary dependencies (including `devDependencies`).
-    -   Copies the entire project source code.
-    -   Builds the application by running `npm run build`.
+    - Starts with a `node:20-slim` base image.
+    - Installs all necessary dependencies (including `devDependencies`).
+    - Copies the entire project source code.
+    - Builds the application by running `npm run build`.
 
 2.  **Production Stage**:
-    -   Starts from a fresh `node:20-slim` base image.
-    -   Installs only the necessary production packages.
-    -   Copies the built artifacts from the `builder` stage.
-    -   Sets up a non-root user for better security.
-    -   Installs the `qwen-code` CLI globally.
-    -   Sets the default command to `qwen`.
+    - Starts from a fresh `node:20-slim` base image.
+    - Installs only the necessary production packages.
+    - Copies the built artifacts from the `builder` stage.
+    - Sets up a non-root user for better security.
+    - Installs the `qwen-code` CLI globally.
+    - Sets the default command to `qwen`.
 
 ## Advanced/Optional Files
 
 If you need a database, admin tools, or a devcontainer for VS Code, you can add:
+
 - `docker/Dockerfile.mysql`: For MySQL service
 - `docker/docker-compose.admin.yaml`: For admin services
 - `docker/devcontainer.json`: For VS Code remote containers
 - `docker/env`: For environment variables
 
 ## Devcontainer Setup (VS Code)
+
 To use VS Code's Remote Containers:
+
 1. Add a `devcontainer.json` in `docker/`:
+
 ```json
 {
   "name": "qwen-code-dev",
@@ -170,14 +174,16 @@ To use VS Code's Remote Containers:
   "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
 }
 ```
+
 2. Open VS Code, run "Remote-Containers: Open Folder in Container".
 
 ## Adding More Services
+
 - To add a database, create a new Dockerfile (e.g., `Dockerfile.mysql`) and add a service to `docker-compose.yml`.
 - For admin tools, use a separate compose file (e.g., `docker-compose.admin.yaml`).
 
-
 ## Best Practices & Tips
+
 - Keep all Docker files in the `docker/` directory for clarity.
 - Use a main `docker-compose.yml` and extend with base or specialized files for modularity.
 - Use named volumes for persistent data (see example in `docker-compose.yml`).
@@ -190,9 +196,11 @@ To use VS Code's Remote Containers:
 - Clean up unused containers/images with `docker system prune`.
 
 ## Troubleshooting
+
 - If you see vulnerabilities, consider updating your base image or scanning with tools like `docker scan`.
 - For multi-stage builds, always set the correct build context and Dockerfile path.
 
 ## Future Projects
+
 - Use this structure for all new projects for consistency.
 - Add devcontainer support if you want VS Code integration.

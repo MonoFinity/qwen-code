@@ -4,6 +4,7 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+    
     {
       "type": "node",
       "request": "launch",
@@ -13,6 +14,8 @@
       "skipFiles": ["<node_internals>/**"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
+  // Load environment variables for provider and keys
+  "envFile": "${workspaceFolder}/.qwen/.env",
       "env": {
         "GEMINI_SANDBOX": "false"
       }

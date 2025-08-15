@@ -338,7 +338,11 @@ Please analyze the conversation history to determine the possibility that the co
         .generateJson(contents, schema, signal, DEFAULT_GEMINI_FLASH_MODEL);
     } catch (e) {
       // Do nothing, treat it as a non-loop.
-      this.config.getDebugMode() ? console.error(e) : console.debug(e);
+      if (this.config.getDebugMode()) {
+        console.error(e);
+      } else {
+        console.debug(e);
+      }
       return false;
     }
 

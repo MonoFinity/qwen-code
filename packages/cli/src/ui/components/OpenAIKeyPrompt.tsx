@@ -28,7 +28,7 @@ export function OpenAIKeyPrompt({
     // 过滤粘贴相关的控制序列
     let cleanInput = (input || '')
       // 过滤 ESC 开头的控制序列（如 \u001b[200~、\u001b[201~ 等）
-      .replace(/\u001b\[[0-9;]*[a-zA-Z]/g, '') // eslint-disable-line no-control-regex
+  .replace(/\u001b\[[0-9;]*[a-zA-Z]/g, '')
       // 过滤粘贴开始标记 [200~
       .replace(/\[200~/g, '')
       // 过滤粘贴结束标记 [201~

@@ -47,15 +47,7 @@ const argv = yargs(hideBin(process.argv))
       'Path to write the final image URI. Used for CI/CD pipeline integration.',
   }).argv;
 
-let sandboxCommand;
-try {
-  sandboxCommand = execSync('node scripts/sandbox_command.js')
-    .toString()
-    .trim();
-} catch {
-  console.warn('ERROR: could not detect sandbox container command');
-  process.exit(0);
-}
+let sandboxCommand = 'docker';
 
 if (sandboxCommand === 'sandbox-exec') {
   console.warn(
@@ -68,12 +60,12 @@ console.log(`using ${sandboxCommand} for sandboxing`);
 
 const baseImage = cliPkgJson.config.sandboxImageUri;
 const customImage = argv.i;
-const baseDockerfile = 'Dockerfile';
+const baseDockerfile = 'docker/Dockerfile';
 const customDockerfile = argv.f;
 
 if (!baseImage?.length) {
   console.warn(
-    'No default image tag specified in gemini-cli/packages/cli/package.json',
+    'No default image tag specified in qwen-cli/packages/cli/package.json',
   );
 }
 
@@ -119,28 +111,28 @@ chmodSync(
   0o755,
 );
 
-const buildStdout = process.env.VERBOSE ? 'inherit' : 'ignore';
+const buildStdout = 'inherit';
 
 function buildImage(imageName, dockerfile) {
   console.log(`building ${imageName} ... (can be slow first time)`);
   const buildCommand =
     sandboxCommand === 'podman'
       ? `${sandboxCommand} build --authfile=<(echo '{}')`
-      : `${sandboxCommand} build`;
+      : `${sandboxCommand} build --no-cache`;
 
   const npmPackageVersion = JSON.parse(
     readFileSync(join(process.cwd(), 'package.json'), 'utf-8'),
   ).version;
 
   const imageTag =
-    process.env.GEMINI_SANDBOX_IMAGE_TAG || imageName.split(':')[1];
+    process.env.QWEN_SANDBOX_IMAGE_TAG || imageName.split(':')[1];
   const finalImageName = `${imageName.split(':')[0]}:${imageTag}`;
 
   execSync(
     `${buildCommand} ${
       process.env.BUILD_SANDBOX_FLAGS || ''
     } --build-arg CLI_VERSION_ARG=${npmPackageVersion} -f "${dockerfile}" -t "${finalImageName}" .`,
-    { stdio: buildStdout, shell: '/bin/bash' },
+    { stdio: buildStdout },
   );
   console.log(`built ${finalImageName}`);
 
