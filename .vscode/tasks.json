@@ -4,12 +4,17 @@
     {
       "label": "MCP Auto-loader",
       "type": "shell",
-      "command": "powershell",
+      "command": "powershell.exe",
       "args": [
         "-ExecutionPolicy", "Bypass",
-        "-File", "${workspaceFolder}/scripts/mcp-autoloader.ps1",
+        "-File", ".\\scripts\\mcp-autoloader.ps1",
         "-Verbose"
       ],
+      "options": {
+        "shell": {
+          "executable": "powershell.exe"
+        }
+      },
       "group": "build",
       "presentation": {
         "echo": true,
@@ -27,13 +32,18 @@
     {
       "label": "MCP Install Dependencies",
       "type": "shell", 
-      "command": "powershell",
+      "command": "powershell.exe",
       "args": [
         "-ExecutionPolicy", "Bypass",
-        "-File", "${workspaceFolder}/scripts/mcp-autoloader.ps1", 
+        "-File", ".\\scripts\\mcp-autoloader.ps1", 
         "-Force",
         "-Verbose"
       ],
+      "options": {
+        "shell": {
+          "executable": "powershell.exe"
+        }
+      },
       "group": "build",
       "presentation": {
         "echo": true,
