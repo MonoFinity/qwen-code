@@ -1,0 +1,50 @@
+{
+	"servers": {
+		"swarm-memory": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@qwen-swarm/swarm-memory@latest"
+			],
+			"env": {
+				"MEMORY_FILE_PATH": "qwen-project-memory.json"
+			}
+		},
+		"swarm-sys-ops": {
+			"type": "stdio", 
+			"command": "npx",
+			"args": [
+				"-y",
+				"@qwen-swarm/swarm-sys-ops@latest"
+			]
+		},
+		"google-vision": {
+			"type": "stdio",
+			"command": "npx", 
+			"args": [
+				"-y",
+				"@qwen-swarm/google-vision@latest"
+			]
+		},
+		"filesystem": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y", 
+				"@modelcontextprotocol/server-filesystem@latest",
+				"${workspaceFolder}"
+			]
+		},
+		"git": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-git@latest",
+				"--repository",
+				"${workspaceFolder}"
+			]
+		}
+	}
+}
